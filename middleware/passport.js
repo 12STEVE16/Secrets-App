@@ -1,5 +1,6 @@
 import passport from 'passport';
 import GoogleStrategy from 'passport-google-oauth20';
+import FacebookStrategy from 'passport-facebook';
 import User from '../model/User.js';
 import dotenv from 'dotenv';
 export const setupPassport = () => {
@@ -25,7 +26,7 @@ export const setupPassport = () => {
     passport.use(new GoogleStrategy({
         clientID: process.env.CLIENT_ID,
         clientSecret: process.env.CLIENT_SECRET,
-        callbackURL: 'http://localhost:3000/auth/google/callback',
+        callbackURL: 'http://localhost:3001/auth/google/callback',
       }, async (accessToken, refreshToken, profile, cb) => {
           try {
               const user = await User.findOne({ googleId: profile.id });
@@ -48,45 +49,45 @@ export const setupPassport = () => {
           }
     }));
 
-    // passport.use(new FacebookStrategy({
-    //     clientID: '1026838665238726',
-    //     clientSecret: '85d8ee5af872e624d3bbadd50ad07fd2',
-    //     callbackURL: 'http://localhost:3000/auth/facebook/callback',
-    //     profileFields: ['id', 'displayName', 'emails'],
-    //   },
-    //     async (accessToken, refreshToken, profile, cb) => {
-    //         try {
-    //             const user = await Customer.findOne({ facebookId: profile.id });
+    passport.use(new FacebookStrategy({
+        clientID:process.env.FACEBOOK_CLIENT_ID,
+        clientSecret:process.env.FACEBOOK_CLIENT_SECRET,
+        callbackURL: 'http://localhost:3001/auth/facebook/callback',
+        profileFields: ['id', 'displayName', 'emails'],
+      },
+        async (accessToken, refreshToken, profile, cb) => {
+            try {
+                const user = await User.findOne({ facebookId: profile.id });
       
-    //             if (!user) {
-    //               function getFirstName(fullName) {
-    //                 // Logic to extract the first name from the full name
-    //                 return fullName.split(' ')[0];
-    //             }
+                if (!user) {
+                  function getFirstName(fullName) {
+                    // Logic to extract the first name from the full name
+                    return fullName.split(' ')[0];
+                }
                 
-    //             function getSecondName(fullName) {
-    //                 // Logic to extract the second name from the full name
-    //                 const nameParts = fullName.split(' ');
-    //                 return nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-    //             }
+                function getSecondName(fullName) {
+                    // Logic to extract the second name from the full name
+                    const nameParts = fullName.split(' ');
+                    return nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+                }
                 
-    //                 const newUser = new Customer({
-    //                   firstName: getFirstName(profile.displayName),
-    //                   secondName: getSecondName(profile.displayName),
-    //                     email: profile.emails[0].value,
-    //                     facebookId: profile.id,
-    //                 });
+                    const newUser = new User({
+                      firstName: getFirstName(profile.displayName),
+                      secondName: getSecondName(profile.displayName),
+                        email: profile.emails[0].value,
+                        facebookId: profile.id,
+                    });
       
-    //                 await newUser.save();
-    //                 return cb(null, newUser);
-    //             } else {
-    //                 return cb(null, user);
-    //             }
-    //         } catch (err) {
-    //             return cb(err, null);
-    //         }
-    //     }
-    //   ));
+                    await newUser.save();
+                    return cb(null, newUser);
+                } else {
+                    return cb(null, user);
+                }
+            } catch (err) {
+                return cb(err, null);
+            }
+        }
+      ));
     
     
 };
@@ -99,19 +100,19 @@ export const getGoogleLogin = () => {
     });
   };
   
-  export const getGoogleCallback = passport.authenticate('google', {
+export const getGoogleCallback = passport.authenticate('google', {
     failureRedirect: '/login',
     successRedirect: '/secrets',
   });
 
-  const getFacebookLogin = (req, res, next) => {
+export const getFacebookLogin = (req, res, next) => {
     passport.authenticate('facebook', {
         scope: ['email'],
     })(req, res, next);
   };
   
-  const getFacebookCallback = passport.authenticate('facebook', {
+export const getFacebookCallback = passport.authenticate('facebook', {
     failureRedirect: '/login',
-    successRedirect: '/home',
+    successRedirect: '/secrets',
   });
     
